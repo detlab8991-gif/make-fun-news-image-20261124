@@ -1,28 +1,46 @@
-"""Write the 24 November 2026 news image to the grader's output path.
+"""Copy the entry image to the output location.
 
-The entry image lives in this repository as entry.jpg. This program
-copies it byte for byte to /output/entry.png, creating the output
-directory first if it is missing. It makes no network requests, reads
-no other file, and produces identical bytes on every run. The copy is
-checked by comparing the byte counts of source and destination.
+This program takes the file entry.jpg that sits in the same directory
+as this script and copies it to /output/entry.png. It creates the
+output directory when needed, refuses to continue when the source
+image is missing, and checks that the copy has exactly the same
+number of bytes as the original before reporting success. It needs
+no network access and reads no file other than the entry image.
 """
 
+import os
 import shutil
-from pathlib import Path
-
-SOURCE = Path(__file__).resolve().parent / "entry.jpg"
-DESTINATION = Path("/output/entry.png")
+import sys
 
 
-def main() -> None:
-    if not SOURCE.is_file():
-        raise SystemExit(f"entry image missing: {SOURCE}")
-    DESTINATION.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(SOURCE, DESTINATION)
-    written = DESTINATION.stat().st_size
-    if written != SOURCE.stat().st_size:
-        raise SystemExit(f"copy incomplete: wrote {written} bytes")
-    print(f"wrote {DESTINATION} ({written} bytes)")
+def main():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    source = os.path.join(script_dir, "entry.jpg")
+    destination_dir = "/output"
+    destination = os.path.join(destination_dir, "entry.png")
+
+    if not os.path.isfile(source):
+        print("error: source image not found: " + source, file=sys.stderr)
+        sys.exit(1)
+
+    os.makedirs(destination_dir, exist_ok=True)
+
+    shutil.copyfile(source, destination)
+
+    source_size = os.path.getsize(source)
+    destination_size = os.path.getsize(destination)
+    if destination_size != source_size:
+        print(
+            "error: size mismatch after copy: source "
+            + str(source_size)
+            + " bytes, destination "
+            + str(destination_size)
+            + " bytes",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    print("Wrote " + destination + " (" + str(destination_size) + " bytes)")
 
 
 if __name__ == "__main__":
